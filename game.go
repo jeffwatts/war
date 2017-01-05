@@ -6,22 +6,21 @@ import (
 )
 
 type Game struct {
-	playerA          *models.Player
-	playerB          *models.Player
+	playerA          models.Player
+	playerB          models.Player
 	commandReceiver  *CommandReceiver
 	commandChannel   chan<- int
 	logVerbose       bool
 	playCardsChannel <-chan models.Play
 }
 
+// Creates a new 2-player game
 func NewGame(logVerbose bool) *Game {
 	playCardsChannel := make(chan models.Play, 8)
-	receiveCardsChannelA := make(chan []models.Card, 1)
-	receiveCardsChannelB := make(chan []models.Card, 1)
-	playerA := models.NewPlayer("Player A", playCardsChannel, receiveCardsChannelA)
-	playerB := models.NewPlayer("Player B", playCardsChannel, receiveCardsChannelB)
+	playerA := models.NewPlayer("Player A", playCardsChannel)
+	playerB := models.NewPlayer("Player B", playCardsChannel)
 	commandChannel := make(chan int, 1)
-	commandReceiver := &CommandReceiver{players: []*models.Player{playerA, playerB}, commandChannel: commandChannel}
+	commandReceiver := &CommandReceiver{players: []models.Player{playerA, playerB}, commandChannel: commandChannel}
 
 	return &Game{
 		playerA:          playerA,
@@ -38,18 +37,19 @@ func (this *Game) Play() {
 	deck := models.NewShuffledDeck()
 	this.logv(fmt.Sprintf("Shuffled deck of cards is %v", deck))
 	this.dealCards(deck)
+	go this.commandReceiver.listen()
 	// start the game by telling each player to play one card
 	this.playNewHand()
 }
 
 // Convenience function for telling each player to play one card with no carryover
 func (this *Game) playNewHand() {
+	this.logv("Playing new hand")
 	this.playHand(1, []models.Card{})
 }
 
 func (this *Game) playHand(numCards int, carriedOverCards []models.Card) {
 	this.commandChannel <- numCards
-	this.commandReceiver.listen()
 	this.processPlay(numCards, carriedOverCards)
 }
 
@@ -62,8 +62,8 @@ func (this *Game) dealCards(deck []models.Card) {
 		}
 	}
 
-	this.logv(fmt.Sprintf("%s hand = %v", this.playerA.Name, this.playerA.Hand))
-	this.logv(fmt.Sprintf("%s hand = %v", this.playerB.Name, this.playerB.Hand))
+	this.logv(fmt.Sprintf("%s hand = %v", this.playerA.GetName(), this.playerA.GetHand()))
+	this.logv(fmt.Sprintf("%s hand = %v", this.playerB.GetName(), this.playerB.GetHand()))
 }
 
 func (this *Game) processPlay(lastNumCardsRequested int, carriedOverCards []models.Card) {
@@ -73,7 +73,7 @@ func (this *Game) processPlay(lastNumCardsRequested int, carriedOverCards []mode
 
 	for i := 0; i < totalExpectedCards; i++ {
 		play := <-this.playCardsChannel
-		this.logv(fmt.Sprintf("Got play = {Player: %s, Card: %v}", play.Player.Name, play.Card))
+		this.logv(fmt.Sprintf("Got play = {Player: %s, Card: %v}", play.Player.GetName(), play.Card))
 
 		// Player can't complete the play, game is over
 		if play.Card == models.NilCard {
@@ -104,11 +104,11 @@ func (this *Game) processHand(playerACards, playerBCards []models.Card, carriedO
 
 	// Could go all the way and push the cards through a channel
 	if lastCardA > lastCardB {
-		this.logv(fmt.Sprintf("%v > %v, %s wins the hand", lastCardA, lastCardB, this.playerA.Name))
+		this.logv(fmt.Sprintf("%v > %v, %s wins the hand", lastCardA, lastCardB, this.playerA.GetName()))
 		pushCardsToPlayer(this.playerA, playerACards, playerBCards, carriedOverCards)
 		this.playNewHand()
 	} else if lastCardB > lastCardA {
-		this.logv(fmt.Sprintf("%v < %v, %s wins the hand", lastCardA, lastCardB, this.playerB.Name))
+		this.logv(fmt.Sprintf("%v < %v, %s wins the hand", lastCardA, lastCardB, this.playerB.GetName()))
 		pushCardsToPlayer(this.playerB, playerACards, playerBCards, carriedOverCards)
 		this.playNewHand()
 	} else { // war!
@@ -121,21 +121,21 @@ func (this *Game) processHand(playerACards, playerBCards []models.Card, carriedO
 	}
 }
 
-func pushCardsToPlayer(player *models.Player, cards ...[]models.Card) {
+func pushCardsToPlayer(player models.Player, cards ...[]models.Card) {
 	for _, cardSlice := range cards {
 		player.PushCards(cardSlice...)
 	}
 }
 
-func (this *Game) endGame(loser *models.Player) {
-	var winner *models.Player
+func (this *Game) endGame(loser models.Player) {
+	var winner models.Player
 	if loser == this.playerA {
 		winner = this.playerB
 	} else {
 		winner = this.playerA
 	}
 
-	log(fmt.Sprintf("Game over! %s wins", winner.Name))
+	log(fmt.Sprintf("Game over! %s wins", winner.GetName()))
 }
 
 func log(msg string) {

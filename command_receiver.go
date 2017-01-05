@@ -5,13 +5,16 @@ import (
 )
 
 type CommandReceiver struct {
-	players        []*models.Player
+	players        []models.Player
 	commandChannel <-chan int
 }
 
+// Listens for commands to play cards. Should run on its own goroutine.
 func (this *CommandReceiver) listen() {
-	numCardsToPlay := <-this.commandChannel
-	for _, player := range this.players {
-		player.Play(numCardsToPlay)
+	for {
+		numCardsToPlay := <-this.commandChannel
+		for _, player := range this.players {
+			player.Play(numCardsToPlay)
+		}
 	}
 }

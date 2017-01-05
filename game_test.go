@@ -11,8 +11,8 @@ func TestDealCards(t *testing.T) {
 	game.dealCards(deck)
 
 	expectedCardsPerPlayer := len(deck) / 2
-	actualCardsA := len(game.playerA.Hand)
-	actualCardsB := len(game.playerA.Hand)
+	actualCardsA := len(game.playerA.GetHand())
+	actualCardsB := len(game.playerA.GetHand())
 
 	if actualCardsA != expectedCardsPerPlayer {
 		t.Errorf("Expected playerA to have %d cards, but had %d", expectedCardsPerPlayer, actualCardsA)

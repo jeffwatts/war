@@ -7,8 +7,7 @@ import (
 func TestNewPlayer(t *testing.T) {
 	playerName := "Test Player"
 	playChannel := make(chan Play)
-	receiveCardsChannel := make(chan []Card)
-	player := NewPlayer(playerName, playChannel, receiveCardsChannel)
+	player := NewPlayer(playerName, playChannel)
 
 	if player.Name != playerName {
 		t.Error("Expected", playerName, "got", player.Name)
@@ -16,7 +15,7 @@ func TestNewPlayer(t *testing.T) {
 }
 
 func TestPlayOneCard(t *testing.T) {
-	player := new(Player)
+	player := new(PlayerImpl)
 	playChannel := make(chan Play, 1)
 	player.playChannel = playChannel
 	player.PushCards(TEN, ACE)
@@ -38,7 +37,7 @@ func TestPlayOneCard(t *testing.T) {
 }
 
 func TestPlayFourCards(t *testing.T) {
-	player := new(Player)
+	player := new(PlayerImpl)
 	playChannel := make(chan Play, 4)
 	player.playChannel = playChannel
 	player.PushCards(TEN, JACK, QUEEN, KING)
@@ -56,7 +55,7 @@ func TestPlayFourCards(t *testing.T) {
 }
 
 func TestPlayMoreCardsThanPlayerHas(t *testing.T) {
-	player := new(Player)
+	player := new(PlayerImpl)
 	playChannel := make(chan Play, 1)
 	player.playChannel = playChannel
 	player.Play(1)
@@ -72,7 +71,7 @@ func TestPlayMoreCardsThanPlayerHas(t *testing.T) {
 }
 
 func TestPushOneCard(t *testing.T) {
-	player := new(Player)
+	player := new(PlayerImpl)
 	player.PushCards(TWO)
 
 	if len(player.Hand) != 1 {
@@ -81,7 +80,7 @@ func TestPushOneCard(t *testing.T) {
 }
 
 func TestPushMultipleCards(t *testing.T) {
-	player := new(Player)
+	player := new(PlayerImpl)
 	player.PushCards(QUEEN)
 	player.PushCards(TWO, ACE, SEVEN, NINE, SIX, KING)
 

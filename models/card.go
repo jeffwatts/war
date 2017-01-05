@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 )
@@ -25,6 +26,23 @@ const (
 	KING
 	ACE
 )
+
+func (c Card) String() string {
+	switch c {
+	case NilCard:
+		return "NIL"
+	case JACK:
+		return "Jack"
+	case QUEEN:
+		return "Queen"
+	case KING:
+		return "King"
+	case ACE:
+		return "Ace"
+	default:
+		return fmt.Sprintf("%d", c)
+	}
+}
 
 // Creates a standard, shuffled 52-card deck
 func NewShuffledDeck() []Card {

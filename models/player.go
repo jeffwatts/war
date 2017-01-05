@@ -1,27 +1,32 @@
 package models
 
-type Player struct {
+type Player interface {
+	Play(numCards int)
+	PushCards(cards ...Card)
+	GetName() string
+	GetHand() []Card
+}
+
+type PlayerImpl struct {
 	Name                string
 	Hand                []Card
 	playChannel         chan<- Play
-	receiveCardsChannel <-chan []Card
 }
 
 type Play struct {
-	Player *Player
+	Player Player
 	Card   Card
 }
 
-func NewPlayer(name string, playChannel chan<- Play, receiveCardsChannel <-chan []Card) *Player {
-	return &Player{
+func NewPlayer(name string, playChannel chan<- Play) *PlayerImpl {
+	return &PlayerImpl{
 		Name:                name,
 		Hand:                make([]Card, 0, 52),
 		playChannel:         playChannel,
-		receiveCardsChannel: receiveCardsChannel,
 	}
 }
 
-func (this *Player) Play(numCardsToPlay int) {
+func (this *PlayerImpl) Play(numCardsToPlay int) {
 	if numCardsToPlay > len(this.Hand) {
 		// Play with card value = NilCard signifies that this player does not have sufficient cards and has lost
 		this.playChannel <- Play{Player: this, Card: NilCard}
@@ -35,6 +40,14 @@ func (this *Player) Play(numCardsToPlay int) {
 	this.Hand = this.Hand[numCardsToPlay:]
 }
 
-func (this *Player) PushCards(cards ...Card) {
+func (this *PlayerImpl) PushCards(cards ...Card) {
 	this.Hand = append(this.Hand, cards...)
+}
+
+func (this *PlayerImpl) GetName() string {
+	return this.Name
+}
+
+func (this *PlayerImpl) GetHand() []Card {
+	return this.Hand
 }
